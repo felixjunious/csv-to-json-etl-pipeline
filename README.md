@@ -1,4 +1,4 @@
-# Data File Converter (CSV → JSON)
+# Data File Converter Pipeline (CSV → JSON)
 
 ## Overview
 

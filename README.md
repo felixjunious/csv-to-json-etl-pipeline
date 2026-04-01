@@ -20,6 +20,7 @@ It is created for learning and practice purposes to simulate a real-world data e
 
 ## Project Structure
 
+```text
 project-folder/
 │
 ├── .gitignore
@@ -31,6 +32,7 @@ project-folder/
     ├── retail_db/           # raw CSV input
     │   └── schemas.json     # dataset metadata + column definitions
     └── retail_db_json/      # JSON output (generated)
+```
 
 ### File and Folder Details
 

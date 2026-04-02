@@ -6,9 +6,14 @@ import os
 import sys
 import logging
 
-
 logger = logging.getLogger(__name__)
 
+DATA_TYPE_MAP = {
+    "integer": int,
+    "float": float,
+    "string": str,
+    "timestamp": "timestamp"
+}
 
 def load_schemas(schemas_path):
     try:
@@ -32,6 +37,40 @@ def load_schemas(schemas_path):
         raise
 
 
+def validate_dataframe(df, schemas, ds_name):
+    errors = []
+    schema_cols = schemas[ds_name]
+
+    for col_def in schema_cols:
+        col_name = col_def["column_name"]
+        dtype = col_def["data_type"]
+
+        # Allow empty data type
+        if dtype == "":
+            continue
+
+        elif dtype == "integer":
+            invalid_rows = df[~df[col_name].astype(str).str.match(r"^-?\d+$")]
+            if not invalid_rows.empty:
+                errors.append(f"{len(invalid_rows)} rows have invalid integer in column '{col_name}'")
+                
+        elif dtype == "float":
+            invalid_rows = df[~df[col_name].astype(str).str.match(r"^-?\d+(\.\d+)?$")]
+            if not invalid_rows.empty:
+                errors.append(f"{len(invalid_rows)} rows have invalid float in column '{col_name}'")
+
+        elif dtype == "timestamp":
+            try:
+                pd.to_datetime(df[col_name], errors="raise")
+            except Exception:
+                errors.append(f"Invalid timestamp format in column '{col_name}'")
+
+        elif dtype == "string":
+            pass
+
+    return errors
+
+
 def get_column_names(schemas, ds_name, sorting_key="column_position"):
     column_details = sorted(schemas[ds_name], key=lambda col: col[sorting_key])
     return [col["column_name"] for col in column_details]
@@ -43,12 +82,11 @@ def read_csv(file_path, schemas):
     try:
         column_names = get_column_names(schemas, ds_name)
     except KeyError as e:
-        logger.error(f"Schema missing or invalod for dataset '{ds_name}'. File path: {file_path}")
+        logger.error(f"Schema missing or invalid for dataset '{ds_name}'. File path: {file_path}")
         raise
 
     try:
-        df = pd.read_csv(file_path, names=column_names, header=None)
-        return df
+        df = pd.read_csv(file_path, names=column_names, header=None, dtype=str)
     
     except FileNotFoundError as e:
         logger.error(f"CSV file not found: {file_path}")
@@ -69,7 +107,15 @@ def read_csv(file_path, schemas):
     except Exception as e:
         logger.error(f"Unexpected error reading CSV '{file_path}': {e}")
         raise
+    
+    validation_errors = validate_dataframe(df, schemas, ds_name)
+    if validation_errors:
+        for err in validation_errors:
+            logger.error(f"Validation error in {file_path}: {err}")
+        
+        raise ValueError(f"Validation failed for file '{file_path}'. See log for details.")
 
+    return df
 
 def to_json(df, tgt_base_dir, ds_name, file_name):
     json_file_dir = tgt_base_dir / ds_name

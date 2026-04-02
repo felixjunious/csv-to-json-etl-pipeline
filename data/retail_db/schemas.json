@@ -36,12 +36,12 @@
         },
         {
             "column_name": "order_date",
-            "data_type": "string",
+            "data_type": "timestamp",
             "column_position": 2
         },
         {
             "column_name": "order_customer_id",
-            "data_type": "timestamp",
+            "data_type": "integer",
             "column_position": 3               
         },
         {

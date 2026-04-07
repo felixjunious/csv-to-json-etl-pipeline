@@ -1,148 +1,185 @@
+***
+
 # Data File Converter Pipeline (CSV → JSON)
 
 ## Overview
 
-This project is a simple data processing pipeline that converts raw CSV files into structured JSON format using predefined schemas.
+This project is a lightweight **data ingestion and transformation pipeline** that converts raw CSV files into structured, schema‑validated JSON output.
 
-It is created for learning and practice purposes to simulate a real-world data engineering workflow where raw datasets are ingested, transformed, and written to a target format for downstream use.
+It is designed as a **learning and practice project** to simulate real‑world data engineering workflows, including schema enforcement, batch processing, validation, logging, and fault‑tolerant file handling.
 
----
+***
 
-## Features
+## Key Features
 
-* Reads raw CSV files from a source directory
-* Applies schema-based column mapping
-* Converts CSV data batch into JSON 
-* Saves the results to a target directory
-* Handles multiple datasets automatically
+*   Reads raw CSV files from a configurable source directory
+*   Applies **schema‑driven column mapping and ordering**
+*   Validates data types (integer, float, timestamp)
+*   Converts CSV batches into **line‑delimited JSON**
+*   Writes dataset‑organized output to a target directory
+*   Processes **multiple datasets automatically**
+*   Robust error handling and structured logging
 
----
+***
 
 ## Project Structure
 
-```text
-project-folder/
-│
-├── .gitignore
-├── .env                     # environment variables (source/target directories)
-├── app.py                   # main CSV → JSON pipeline
-├── requirements.txt         # Python dependencies
-├── README.md
-└── data/
-    ├── retail_db/           # raw CSV input
-    │   └── schemas.json     # dataset metadata + column definitions
-    └── retail_db_json/      # JSON output (generated)
-```
+    project-folder/
+    │
+    ├── .gitignore
+    ├── .env                     # Environment variables (source / target directories)
+    ├── app.py                   # Main CSV → JSON pipeline
+    ├── requirements.txt         # Python dependencies
+    ├── README.md
+    └── data/
+        ├── retail_db/           # Raw CSV input
+        │   ├── orders/
+        │   │   └── part-00000
+        │   ├── customers/
+        │   │   └── part-00000
+        │   └── schemas.json     # Dataset schemas and column definitions
+        └── retail_db_json/      # Generated JSON output
 
-### File and Folder Details
+***
 
-* **app.py** – main pipeline script 
-* **schemas.json** – JSON file defining metadata and column details for each dataset
-* **.env** – environment variables for specifying source and target base directories 
-* **data/retail_db/** – contains raw CSV datasets used as input for the pipeline
-* **data/retail_db_json/** – output directory for processed the JSON files
-* **requirements.txt** – required Python dependencies 
+## Schema‑Driven Design
 
----
+All datasets are defined in a single `schemas.json` file.  
+Each dataset schema specifies:
 
-## How It Works
+*   Column name
+*   Column position
+*   Expected data type (`integer`, `float`, `string`, `timestamp`)
 
-1. Load schema definitions from schemas.json
-2. Read CSV datasets using schema-based column definitions
-3. Transform rows into pandas DataFrames
-4. Export standardized JSON output for each dataset
+The pipeline uses this schema to:
 
----
+1.  Order columns correctly
+2.  Validate data
+3.  Enforce consistent output structure
+
+***
+
+## How the Pipeline Works
+
+1.  Load dataset schemas from `schemas.json`
+2.  Discover CSV `part-*` files per dataset
+3.  Read CSV files using schema‑defined column names
+4.  Validate column data types
+5.  Convert validated data into pandas DataFrames
+6.  Write **newline‑delimited JSON** output to the target directory
+7.  Log errors without stopping the entire pipeline
+
+***
 
 ## Example Transformation
 
-**CSV input:**
+### CSV Input
 
-```csv
-product_id,product_category_id,product_name,product_description,product_price,product_image
-1,2,Quest Q64 10 FT. x 10 FT. Slant Leg Instant U,,59.98,http://images.acmesports.sports/Quest+Q64+10+FT.+x+10+FT.+Slant+Leg+Instant+Up+Canopy
-````
+    1,2,Quest Q64 10 FT. x 10 FT. Slant Leg Instant U,,59.98,http://images.acmesports.sports/Quest+Q64...
 
-**JSON output:**
+### JSON Output (Line‑Delimited)
 
 ```json
-[
-  {
-    "product_id": 1,
-    "product_category_id": 2,
-    "product_name": "Quest Q64 10 FT. x 10 FT. Slant Leg Instant U",
-    "product_description": null,
-    "product_price": 59.98,
-    "product_image": "http://images.acmesports.sports/Quest+Q64+10+FT.+x+10+FT.+Slant+Leg+Instant+Up+Canopy"
-  }
-]
+{"product_id":"1","product_category_id":"2","product_name":"Quest Q64 10 FT. x 10 FT. Slant Leg Instant U","product_description":null,"product_price":"59.98","product_image":"http://images.acmesports.sports/Quest+Q64..."}
 ```
 
----
+✅ Output format is **newline‑delimited JSON (JSONL)** for scalability and downstream processing.
+
+***
 
 ## Setup
 
-### 1. Install dependencies
+### 1. Install Dependencies
 
-```
+```bash
 pip install -r requirements.txt
 ```
 
-### 2. (Optional) Configure environment variables
+***
 
-Change the `.env` file if needed:
+### 2. Configure Environment Variables
 
-```
-SRC_BASE_DIR=path/to/source/data
-TGT_BASE_DIR=path/to/output/data
-```
+Create or update the `.env` file:
 
-You can customize these paths to point to your own datasets.
-
-Default `.env`:
-
-```
+```env
 SRC_BASE_DIR=data/retail_db
 TGT_BASE_DIR=data/retail_db_json
+SCHEMAS_PATH=data/retail_db/schemas.json
 ```
 
----
+These variables control where input data is read from and where output data is written.
+
+***
 
 ## Usage
 
-### Process all datasets
+### Process All Datasets
 
-```
+```bash
 python app.py
 ```
 
-### Process specific datasets
+***
 
-```
+### Process Specific Datasets
+
+Pass a JSON list of dataset names:
+
+```bash
 python app.py '["orders", "customers"]'
 ```
 
----
+Only the specified datasets will be processed.
+
+***
+
+## Logging & Error Handling
+
+*   Application logs are written to `app.log`
+*   Invalid files do **not** stop the pipeline
+*   Validation errors are logged with row counts and column names
+*   Missing schemas or malformed files are skipped safely
+
+***
 
 ## Technologies Used
 
-* Python
+*   Python
+*   pandas
+*   python‑dotenv
+*   JSON / CSV
 
----
+***
 
-## Notes
+## Limitations
 
-* This project focuses on demonstrating core data engineering concepts such as schema enforcement and batch processing
-* This project is mainly for learning purposes and to practice production-ready data engineering skills.
+*   Schema enforcement is validation‑based (does not auto‑coerce types)
+*   JSON output uses string values for consistency with raw CSV input
+*   Not optimized for very large files (single‑file pandas reads)
 
----
+***
 
 ## Future Improvements
 
-* Add logging instead of print statements
-* Support additional file formats (Parquet, Avro)
-* Integrate with cloud storage (AWS S3, GCP)
-* Add unit tests
+*   ✅ Add unit and integration tests
+*   ✅ Support additional formats (Parquet, Avro)
+*   ✅ Add type coercion after validation
+*   ✅ Add incremental / streaming ingestion
+*   ✅ Integrate with cloud storage (S3 / GCS / Azure Blob)
+*   ✅ Add metadata and processing statistics
 
----
+***
+
+## Purpose
+
+This project focuses on **core data engineering fundamentals**:
+
+*   Schema enforcement
+*   Batch ingestion patterns
+*   Fault‑tolerant pipelines
+*   Clean, maintainable Python code
+
+It is intended for **learning, practice, and portfolio demonstration**.
+
+***
 

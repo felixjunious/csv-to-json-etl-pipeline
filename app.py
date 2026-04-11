@@ -118,7 +118,7 @@ def read_csv(file_path, schemas):
     return df
 
 def to_json(df, tgt_base_dir, ds_name, file_name):
-    json_file_dir = tgt_base_dir / ds_name
+    json_file_dir = Path(tgt_base_dir) / ds_name
 
     try:
         json_file_dir.mkdir(parents=True, exist_ok=True)
@@ -162,7 +162,7 @@ def to_json(df, tgt_base_dir, ds_name, file_name):
 
 
 def file_converter(src_base_dir, tgt_base_dir, ds_name, schemas):
-    src_path_list = src_base_dir.glob(f"{ds_name}/part-*")
+    src_path_list = Path(src_base_dir).glob(f"{ds_name}/part-*")
 
     files_found = False
 
